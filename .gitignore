@@ -1,0 +1,4 @@
+.env
+logs/
+*.log
+email-watcher-state.json
