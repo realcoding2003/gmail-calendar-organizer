@@ -1,0 +1,62 @@
+너는 이메일 분류 시스템의 메모리 관리자야.
+아래 데이터를 분석하여 최적화된 메모리를 JSON으로 출력해.
+
+## 작업
+
+### 1. sender-patterns 최적화
+- 같은 도메인의 개별 이메일 주소 → 도메인 하나로 통합 (예: `a@foo.com`, `b@foo.com` → `foo.com`)
+- 단, 같은 도메인에서 다른 라벨로 분류되는 경우는 개별 유지 (예: `no-reply@flex.team` → HR, `flex.team` → 광고)
+- count가 0이고 90일 이상 된 패턴 제거
+- label이 null/None/빈 문자열인 패턴 제거
+
+### 2. classification-rules 최적화
+- 중복 규칙 병합 (같은 from + 같은 label)
+- sender-patterns와 겹치는 규칙 제거 (패턴이 더 우선)
+- applied_count가 0이고 90일 이상 된 규칙 제거
+
+### 3. 충돌 감지
+- 같은 발신자/키워드에 다른 라벨이 지정된 경우 → conflicts 배열에 기록
+
+### 4. 통계
+- 라벨별 패턴 수
+- 총 패턴 수 (정리 전/후)
+- 제거된 항목 목록
+
+## 출력 형식
+
+```json
+{
+  "optimized_patterns": {
+    "도메인또는이메일": {
+      "label": "라벨", "archive": true,
+      "count": 합산, "last_seen": "최근날짜",
+      "note": "설명"
+    }
+  },
+  "optimized_rules": [
+    {
+      "id": "rule-xxx",
+      "pattern": {"from_contains": "...", "subject_contains": "..."},
+      "action": {"label": "...", "archive": true},
+      "confidence": 0.9, "source": "...", "created": "...",
+      "applied_count": 0, "note": "..."
+    }
+  ],
+  "conflicts": [
+    {"key": "발신자", "labels": ["라벨1", "라벨2"], "recommendation": "추천"}
+  ],
+  "stats": {
+    "patterns_before": 0, "patterns_after": 0,
+    "rules_before": 0, "rules_after": 0,
+    "removed_patterns": ["제거된것들"],
+    "merged_patterns": ["병합된것들"]
+  }
+}
+```
+
+## 중요
+
+- JSON만 출력
+- 유효한 패턴은 절대 삭제하지 말 것
+- 확신 없으면 그대로 유지
+- 오늘: {TODAY}

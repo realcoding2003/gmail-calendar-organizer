@@ -3,130 +3,198 @@
 ## 개요
 
 Mac Mini에서 crontab으로 구동하는 이메일 자동 분류 + 캘린더 일정 등록 시스템.
-외부 의존성은 Google API Python 클라이언트(`lib/google_api.py`)와 `claude` CLI(AI 판단)뿐이다.
+Google API 직접 호출 + Claude Code CLI 기반.
 
-## 시스템 구성도
+## 전체 구성도
 
 ```mermaid
-graph TD
-    subgraph "Mac Mini"
-        CRON[crontab] -->|5분| EW[bin/email-watcher.sh]
-        CRON -->|30분| FP[bin/feedback-processor.sh]
-        CRON -->|6시간| EO[bin/email-organizer.sh]
-        CRON -->|09:00,18:00| LS[bin/log-summary.sh]
+graph TB
+    subgraph "Mac Mini — 이 프로젝트"
+        subgraph "Cron"
+            W[email-watcher.sh<br/>5분마다]
+            MC[memory-consolidator.sh<br/>주 1회 월 03시]
+        end
 
-        EW --> LIB[lib/]
-        EO --> LIB
-        FP --> LIB
+        subgraph "외부 호출"
+            FP[feedback-processor.sh<br/>알림 봇이 호출]
+        end
 
-        LIB --> CONFIG[config/]
-        LIB --> DATA[data/]
-        LIB --> LOGS[logs/]
+        subgraph "Claude Code CLI"
+            S1[Sonnet — Phase 1 사전 분류]
+            S2[Sonnet — Phase 2 상세 분류]
+            O1[Opus — 메모리 통합]
+        end
+
+        subgraph "Google API"
+            GM[Gmail API]
+            GC[Calendar API]
+        end
+
+        subgraph "데이터"
+            Q[data/queue/<br/>1건 = 1 JSON 파일]
+            MEM[data/memory/<br/>sender-patterns<br/>classification-rules<br/>user-corrections]
+            LOG[logs/]
+        end
+
+        W --> S1 & S2
+        W --> GM
+        W -->|미결정| Q
+        W -->|처리 로그| LOG
+        S1 & S2 -.->|메모리 참조| MEM
+
+        FP --> GM & GC
+        FP -->|학습| MEM
+        FP -->|처리 후 삭제| Q
+
+        MC --> O1
+        O1 -->|최적화| MEM
     end
 
-    subgraph "외부 서비스"
-        GMAIL[Gmail API]
-        GCAL[Google Calendar API]
-        CLAUDE[Claude Code CLI]
+    subgraph "별도 프로젝트 — 알림 봇"
+        BOT[알림 봇]
     end
 
-    LIB -->|google_api.py| GMAIL
-    LIB -->|google_api.py| GCAL
-    LIB -->|claude --print| CLAUDE
+    subgraph "외부"
+        KT[카카오톡]
+        USER[사용자]
+    end
+
+    Q -.->|큐 파일 읽기| BOT
+    BOT -->|질문 전송| KT --> USER
+    USER -->|답변| KT --> BOT
+    BOT -->|feedback-processor.sh 호출| FP
 ```
 
-## 계층 구조
+## 메일 분류 흐름
+
+```mermaid
+sequenceDiagram
+    participant Cron
+    participant Watcher as email-watcher.sh
+    participant Gmail as Gmail API
+    participant Claude as Claude CLI (Sonnet)
+    participant Queue as data/queue/
+    participant Memory as data/memory/
+
+    Cron->>Watcher: 5분마다 실행
+    Watcher->>Gmail: 미처리 스레드 20개 조회 (batch API)
+    Gmail-->>Watcher: 스레드 목록
+
+    Note over Watcher: Phase 1: 제목+발신자만
+    Watcher->>Memory: 메모리 컨텍스트 로드
+    Watcher->>Claude: 20건 일괄 분류 요청
+    Claude-->>Watcher: fast / need_body 분류
+
+    loop fast 항목
+        Watcher->>Gmail: 라벨 + 보관 + _processed
+    end
+
+    Note over Watcher: Phase 2: 본문 포함
+    loop need_body 항목
+        Watcher->>Gmail: 스레드 상세 조회
+        Watcher->>Claude: 개별 분류 요청
+        alt 자동 분류
+            Watcher->>Gmail: 라벨 + 보관 + _processed
+        else 미결정
+            Watcher->>Queue: 큐 파일 생성
+        else 일정 감지
+            Watcher->>Queue: 캘린더 큐 파일 생성
+        end
+    end
+```
+
+## 피드백 처리 흐름
+
+```mermaid
+sequenceDiagram
+    participant Bot as 알림 봇
+    participant Queue as data/queue/
+    participant FP as feedback-processor.sh
+    participant Gmail as Gmail API
+    participant Cal as Calendar API
+    participant Memory as data/memory/
+
+    Bot->>Queue: 큐 파일 읽기 (decision: null)
+    Bot->>Bot: Claude CLI로 질문 생성
+    Bot-->>Bot: 카카오톡 → 사용자 → 답변 수신
+    Bot->>Bot: Claude CLI로 답변 해석
+
+    Bot->>FP: 호출 (파일경로, decision, label)
+
+    alt approve / modify
+        FP->>Gmail: 라벨 적용 + 보관 + _processed
+        FP->>Memory: sender-patterns 학습
+        FP->>Memory: user-corrections 기록
+    else approve (캘린더)
+        FP->>Cal: 일정 등록
+    else reject
+        FP->>Gmail: 휴지통으로 이동
+    end
+
+    FP->>Queue: 큐 파일 삭제
+```
+
+## 메모리 학습 구조
 
 ```mermaid
 graph LR
-    subgraph "실행 계층 (bin/)"
-        EW[email-watcher]
-        EO[email-organizer]
-        EC[email-to-calendar]
-        FP[feedback-processor]
-        LS[log-summary]
+    subgraph "입력"
+        A[사용자 피드백]
+        B[AI 분류 결과]
     end
 
-    subgraph "라이브러리 계층 (lib/)"
-        COMMON[common.sh]
-        CLASSIFY[classifier.sh]
-        GMAIL_A[gmail-actions.sh]
-        CAL_A[calendar-actions.sh]
+    subgraph "메모리"
+        SP[sender-patterns.json<br/>발신자 → 라벨]
+        CR[classification-rules.json<br/>키워드 → 라벨]
+        UC[user-corrections.jsonl<br/>수정 이력]
     end
 
-    subgraph "설정 계층 (config/)"
-        ACC[accounts.json]
-        LABELS[labels.json]
-        PROMPTS[prompts/]
+    subgraph "활용"
+        P1[Phase 1 프롬프트<br/>패턴 매칭 우선]
+        P2[Phase 2 프롬프트<br/>상세 분류 참고]
     end
 
-    subgraph "데이터 계층 (data/)"
-        STATE[state.json]
-        MEMORY[memory/]
-        QUEUE[queue/]
+    A -->|피드백 처리 시| SP & CR & UC
+    B -->|memory_updates| SP & CR
+    SP & CR & UC -->|load_memory_context| P1 & P2
+
+    subgraph "주간 통합"
+        MC[memory-consolidator<br/>Claude Opus]
     end
 
-    EW --> COMMON
-    EW --> CLASSIFY
-    EW --> GMAIL_A
-    EW --> CAL_A
-    EO --> COMMON
-    EO --> CLASSIFY
-    EO --> GMAIL_A
-    FP --> COMMON
-    FP --> GMAIL_A
-    FP --> CAL_A
-
-    COMMON --> ACC
-    COMMON --> LABELS
-    CLASSIFY --> PROMPTS
-    CLASSIFY --> MEMORY
-    FP --> QUEUE
-    FP --> MEMORY
+    SP & CR & UC -->|분석| MC
+    MC -->|최적화| SP & CR
 ```
 
-## 핵심 컴포넌트
+## 스레드 단위 처리
 
-### bin/ — 실행 스크립트
+- Gmail API `threads().list()`로 스레드 검색 (batch API로 메타데이터 일괄 조회)
+- 스레드의 모든 메시지(보낸/받은)를 한 번에 그룹핑
+- `_processed` 라벨은 스레드 단위 적용 → 중복 처리 방지 (멱등)
+- Phase 2에서 스레드 전체 대화를 Claude에 전달 → 답장 내용까지 분석
 
-| 스크립트 | 역할 | cron 주기 |
-| --- | --- | --- |
-| email-watcher.sh | 새 메일 감지 → AI 분류 → 일정 추출 | 5분 |
-| email-organizer.sh | 전체 받은편지함 규칙+AI 배치 정리 | 6시간 |
-| email-to-calendar.sh | 메일에서 일정 추출 (스캔/확인 모드) | 수동/내부 |
-| feedback-processor.sh | 피드백 큐 처리 → 메모리 업데이트 | 30분 |
-| log-summary.sh | 로그 요약 생성 | 09:00, 18:00 |
+## 큐 시스템 설계
 
-### lib/ — 공통 라이브러리
+파일 기반 메시지 큐. DB/API 불필요.
 
-| 모듈 | 역할 |
+```
+data/queue/
+├── classifications/    분류 미결정 (pending-{id}.json)
+├── calendars/          캘린더 미결정 (cal-{id}.json)
+└── labels/             라벨 제안 (label-{name}.json)
+```
+
+- **1건 = 1 JSON 파일** → 동시 접근 충돌 없음
+- **watcher**: 새 파일 생성만 (write)
+- **알림 봇**: 파일 읽기만 (read)
+- **feedback-processor**: 처리 후 삭제 (read → execute → delete)
+- 파일 존재 = 미처리, 파일 없음 = 처리 완료
+
+## 성능 최적화
+
+| 병목 | 해결 |
 | --- | --- |
-| common.sh | 경로, 변수, 로깅, 큐 유틸, 메모리 로드 |
-| classifier.sh | Claude 프롬프트 빌더, 분류 실행, confidence 기반 분기 |
-| gmail-actions.sh | Gmail API 래핑 (검색, 라벨링, 규칙 적용) |
-| calendar-actions.sh | Calendar API 래핑 (이벤트 생성, 조회, 큐 분기) |
-
-### config/ — 설정
-
-| 파일 | 역할 |
-| --- | --- |
-| accounts.json | Gmail 계정 + 캘린더 ID |
-| labels.json | 라벨 정의 + 규칙 기반 매핑 + 일정 키워드 |
-| prompts/ | Claude 프롬프트 템플릿 3개 |
-
-### data/ — 런타임 데이터
-
-| 경로 | 역할 |
-| --- | --- |
-| state.json | email-watcher 마지막 체크 시간 |
-| memory/ | AI 학습 메모리 (분류 규칙, 발신자 패턴, 수정 이력) |
-| queue/ | 피드백 대기 큐 (분류, 캘린더, 라벨) |
-
-## 기술 스택
-
-- **Shell**: Bash + Python3
-- **Gmail/Calendar API**: `lib/google_api.py` (google-api-python-client, OAuth2 인증)
-- **인증**: `.credentials/credentials.json` (OAuth 클라이언트) + 계정별 토큰 자동 갱신
-- **AI 판단**: Claude Code CLI (`claude --print --allowed-tools ""`)
-- **스케줄링**: macOS crontab
-- **구독**: Claude Max20 (API 비용 0)
+| 스레드 검색 N+1 | Gmail batch API로 1회 호출 |
+| 라벨 적용 건별 subprocess | Google API 클라이언트 1회 초기화 |
+| Phase 2 과다 호출 | Phase 1에서 메모리 기반 fast 처리 비율 높임 |
+| 메모리 무한 증가 | 주간 Opus 통합으로 정리 |

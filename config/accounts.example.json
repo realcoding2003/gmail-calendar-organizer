@@ -1,0 +1,20 @@
+{
+  "credentials_file": ".credentials/credentials.json",
+  "accounts": [
+    {
+      "email": "your-email@gmail.com",
+      "primary": true,
+      "calendar_id": "your-calendar-id@group.calendar.google.com",
+      "calendar_name": "캘린더 이름",
+      "token_file": ".credentials/token_your-email@gmail.com.json"
+    },
+    {
+      "email": "another@example.com",
+      "primary": false,
+      "enabled": false,
+      "calendar_id": "your-calendar-id@group.calendar.google.com",
+      "calendar_name": "캘린더 이름",
+      "token_file": ".credentials/token_another@example.com.json"
+    }
+  ]
+}

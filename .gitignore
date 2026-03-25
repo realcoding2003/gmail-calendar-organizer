@@ -6,6 +6,9 @@
 !.credentials/README.md
 !.credentials/.gitkeep
 
+# 계정 설정 (개인정보)
+config/accounts.json
+
 # 런타임 데이터
 data/
 logs/

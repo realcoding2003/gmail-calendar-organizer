@@ -202,24 +202,18 @@ for item in data.get('results', []):
             'method': 'ai'
         }, ensure_ascii=False) + '\n')
 
-    # --- 사용자 확인 필요 → INBOX 유지 + 분류 큐 ---
+    # --- 사용자 확인 필요 → INBOX 유지 + 분류 큐 (1건 = 1파일) ---
     if needs_review or conf < threshold:
-        queue_file = os.path.join(queue_dir, 'pending-classifications.json')
-        try:
-            with open(queue_file) as f:
-                q = json.load(f)
-        except:
-            q = {'pending': []}
-        q['pending'].append({
-            'id': f'pending-{mid[:12]}',
-            'created': now_kst,
-            'email_id': mid, 'account': acct,
-            'subject': title, 'from': sender, 'summary': summary,
-            'ai_suggestion': {'label': label, 'confidence': conf, 'reason': review_reason or cls_reason},
-            'decision': None, 'user_label': None, 'user_note': None
-        })
-        with open(queue_file, 'w') as f:
-            json.dump(q, f, ensure_ascii=False, indent=2)
+        item_id = f'pending-{mid[:12]}'
+        queue_path = os.path.join(queue_dir, 'classifications', f'{item_id}.json')
+        with open(queue_path, 'w') as f:
+            json.dump({
+                'id': item_id, 'created': now_kst,
+                'email_id': mid, 'account': acct,
+                'subject': title, 'from': sender, 'summary': summary,
+                'ai_suggestion': {'label': label, 'confidence': conf, 'reason': review_reason or cls_reason},
+                'decision': None, 'user_label': None, 'user_note': None
+            }, f, ensure_ascii=False, indent=2)
         queue_count += 1
         print(f'QUEUE: {title[:50]} (conf:{conf:.1f}) {review_reason}')
         continue
@@ -234,50 +228,40 @@ for item in data.get('results', []):
         auto_count += 1
         print(f'AI: {label} | {title[:50]} | {sender[:30]} [{status}]')
 
-    # --- 일정 감지 → 캘린더 큐 ---
+    # --- 일정 감지 → 캘린더 큐 (1건 = 1파일) ---
     if schedule:
-        cal_queue_file = os.path.join(queue_dir, 'pending-calendars.json')
-        try:
-            with open(cal_queue_file) as f:
-                cq = json.load(f)
-        except:
-            cq = {'pending': []}
-        cq['pending'].append({
-            'id': f'cal-{mid[:12]}', 'created': now_kst,
-            'source_email': title, 'account': acct,
-            'proposal': {
-                'type': schedule.get('type', 'event'),
-                'summary': schedule.get('summary', title),
-                'start': schedule.get('start', ''),
-                'end': schedule.get('end', ''),
-                'location': schedule.get('location'),
-            },
-            'confidence': schedule.get('confidence', 0.5),
-            'needs_confirm': schedule.get('needs_confirm', True),
-            'decision': None
-        })
-        with open(cal_queue_file, 'w') as f:
-            json.dump(cq, f, ensure_ascii=False, indent=2)
+        cal_id = f'cal-{mid[:12]}'
+        cal_path = os.path.join(queue_dir, 'calendars', f'{cal_id}.json')
+        with open(cal_path, 'w') as f:
+            json.dump({
+                'id': cal_id, 'created': now_kst,
+                'source_email': title, 'account': acct,
+                'proposal': {
+                    'type': schedule.get('type', 'event'),
+                    'summary': schedule.get('summary', title),
+                    'start': schedule.get('start', ''),
+                    'end': schedule.get('end', ''),
+                    'location': schedule.get('location'),
+                },
+                'confidence': schedule.get('confidence', 0.5),
+                'needs_confirm': schedule.get('needs_confirm', True),
+                'decision': None
+            }, f, ensure_ascii=False, indent=2)
         schedule_count += 1
         print(f'SCHEDULE: {schedule.get(\"summary\",\"\")} ({schedule.get(\"start\",\"\")[:16]})')
 
 # --- 새 라벨 제안 → 큐 ---
 for suggestion in data.get('new_label_suggestions', []):
-    label_queue = os.path.join(queue_dir, 'pending-labels.json')
-    try:
-        with open(label_queue) as f:
-            lq = json.load(f)
-    except:
-        lq = {'pending': []}
-    lq['pending'].append({
-        'id': f'label-{suggestion.get(\"name\",\"\")}', 'created': now_kst,
-        'suggested_name': suggestion.get('name', ''),
-        'reason': suggestion.get('reason', ''),
-        'sample_subjects': suggestion.get('sample_subjects', []),
-        'accounts': [acct], 'decision': None
-    })
-    with open(label_queue, 'w') as f:
-        json.dump(lq, f, ensure_ascii=False, indent=2)
+    label_id = f'label-{suggestion.get(\"name\",\"\")}'
+    label_path = os.path.join(queue_dir, 'labels', f'{label_id}.json')
+    with open(label_path, 'w') as f:
+        json.dump({
+            'id': label_id, 'created': now_kst,
+            'suggested_name': suggestion.get('name', ''),
+            'reason': suggestion.get('reason', ''),
+            'sample_subjects': suggestion.get('sample_subjects', []),
+            'accounts': [acct], 'decision': None
+        }, f, ensure_ascii=False, indent=2)
     print(f'NEW_LABEL: {suggestion.get(\"name\",\"\")}')
 
 # --- 메모리 학습 ---

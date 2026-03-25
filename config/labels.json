@@ -126,7 +126,7 @@
     },
     {
       "name": "금융-결제",
-      "description": "결제 내역, 청구서, 세금계산서",
+      "description": "결제 내역, 청구서, 카드 명세",
       "default_archive": true,
       "rules": [
         {
@@ -184,10 +184,6 @@
         {
           "type": "subject",
           "match": "청구서"
-        },
-        {
-          "type": "subject",
-          "match": "세금계산서"
         }
       ]
     },
@@ -338,6 +334,30 @@
           "match": "no-reply@flex.team"
         }
       ]
+    },
+    {
+      "name": "세금계산서",
+      "description": "전자세금계산서, 세금 계산서 발행/수신",
+      "default_archive": true,
+      "rules": [
+        {
+          "type": "subject",
+          "match": "세금계산서"
+        },
+        {
+          "type": "from",
+          "match": "bill36524.com"
+        },
+        {
+          "type": "from",
+          "match": "makebill.co.kr"
+        }
+      ]
+    },
+    {
+      "name": "고객-웹개발",
+      "description": "웹 개발/유지보수 고객사와의 업무 커뮤니케이션(오류 보고, 제안서, 견적)을 분류할 라벨 없음",
+      "default_archive": true
     }
   ],
   "schedule_keywords": [

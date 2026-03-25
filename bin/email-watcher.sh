@@ -18,6 +18,23 @@ source "$SCRIPTS/lib/classifier.sh"
 source "$SCRIPTS/lib/gmail-actions.sh"
 
 BATCH_SIZE=20
+MAX_ROUNDS=1
+DATE_FILTER="newer_than:30d"
+
+# 옵션 파싱
+for arg in "$@"; do
+  case "$arg" in
+    --all)     DATE_FILTER="" ;;
+    --repeat)  MAX_ROUNDS=999 ;;  # 빌 때까지 반복
+    --rounds=*) MAX_ROUNDS="${arg#--rounds=}" ;;
+  esac
+done
+
+if [ -z "$DATE_FILTER" ]; then
+  echo "모드: 전체 미처리 | 반복: ${MAX_ROUNDS}회"
+else
+  echo "모드: 최근 30일 | 반복: ${MAX_ROUNDS}회"
+fi
 
 # 경과 시간 (초)
 elapsed() {
@@ -64,15 +81,23 @@ TOTAL_START=$(date +%s)
 ACCOUNTS=()
 while IFS= read -r line; do ACCOUNTS+=("$line"); done < <(load_accounts)
 
+ROUND=1
+while [ "$ROUND" -le "$MAX_ROUNDS" ]; do
+
+[ "$MAX_ROUNDS" -gt 1 ] && echo "" && echo "===== 라운드 ${ROUND}/${MAX_ROUNDS} ====="
+
+ROUND_EMPTY=true
+
 for acct in "${ACCOUNTS[@]}"; do
   ensure_processed_label "$acct"
 
   # 스레드 20개 가져오기
   T0=$(date +%s)
-  THREAD_LIST=$(search_threads "-label:${PROCESSED_LABEL} -in:trash -in:spam -in:drafts" "$acct" "$BATCH_SIZE")
+  THREAD_LIST=$(search_threads "-label:${PROCESSED_LABEL} -in:trash -in:spam -in:drafts ${DATE_FILTER}" "$acct" "$BATCH_SIZE")
   THREAD_COUNT=$(count_threads "$THREAD_LIST")
   [ "$THREAD_COUNT" -eq 0 ] && { echo "[$acct] 미처리 스레드 없음"; continue; }
 
+  ROUND_EMPTY=false
   echo "[$acct] 미처리 스레드: ${THREAD_COUNT}건 (검색: $(elapsed $T0))"
 
   # 스레드 → messages 형태로 변환 (Phase 1용)
@@ -156,5 +181,16 @@ for m in json.load(sys.stdin).get('messages',[]):
 
   echo "[$acct] 완료 — 패스트:${TOTAL_FAST} AI:${TOTAL_AI} (총: $(elapsed $TOTAL_START))"
 done
+
+# 처리할 게 없었으면 조기 종료
+if $ROUND_EMPTY; then
+  [ "$MAX_ROUNDS" -gt 1 ] && echo "미처리 메일 없음. 종료."
+  break
+fi
+
+ROUND=$((ROUND + 1))
+[ "$ROUND" -le "$MAX_ROUNDS" ] && sleep 2
+
+done  # while ROUND
 
 exit 0

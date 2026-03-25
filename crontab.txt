@@ -2,14 +2,15 @@
 # 경로를 실제 설치 경로로 변경하세요
 
 PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
-HOME=/Users/kevinpark
-PROJECT=/Users/kevinpark/Documents/projects/OKAI/gmail-calendar-organizer
+HOME=/Users/YOUR_USERNAME
+PROJECT=/path/to/gmail-calendar-organizer
 
 # 받은편지함 정리 - 규칙+AI 분류 (5분마다, 빌때까지)
 */5 * * * * bash $PROJECT/bin/email-watcher.sh >> $PROJECT/logs/cron.log 2>&1
 
-# 피드백 큐 처리 (30분마다)
-*/30 * * * * bash $PROJECT/bin/feedback-processor.sh >> $PROJECT/logs/cron.log 2>&1
+# feedback-processor.sh는 cron이 아닌 외부 호출로 실행
+# 알림 봇이 사용자 답변 수신 후 직접 실행:
+#   bash $PROJECT/bin/feedback-processor.sh
 
-# 로그 요약 (매일 09:00, 18:00)
-0 9,18 * * * bash $PROJECT/bin/log-summary.sh >> $PROJECT/logs/cron.log 2>&1
+# 메모리 통합 - 패턴 분석 + 정리 (매주 월요일 03:00)
+0 3 * * 1 bash $PROJECT/bin/memory-consolidator.sh >> $PROJECT/logs/cron.log 2>&1

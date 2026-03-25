@@ -101,6 +101,40 @@ mark_processed() {
   $GOOGLE_API gmail labels-modify "$msg_id" --add "$PROCESSED_LABEL" --account "$acct" >/dev/null 2>&1 || true
 }
 
+# === 파일 락 (동시 접근 방지) ===
+LOCK_DIR="$DATA_DIR/.locks"
+mkdir -p "$LOCK_DIR" 2>/dev/null || true
+
+acquire_lock() {
+  local name="$1"
+  local timeout="${2:-30}"
+  local lockfile="$LOCK_DIR/${name}.lock"
+  local waited=0
+
+  while ! mkdir "$lockfile" 2>/dev/null; do
+    # 락 파일이 60초 이상 되면 stale로 간주하고 제거
+    if [ -d "$lockfile" ]; then
+      local age=$(( $(date +%s) - $(stat -f %m "$lockfile" 2>/dev/null || echo 0) ))
+      if [ "$age" -gt 60 ]; then
+        rmdir "$lockfile" 2>/dev/null || true
+        continue
+      fi
+    fi
+    sleep 1
+    waited=$((waited + 1))
+    if [ "$waited" -ge "$timeout" ]; then
+      echo "WARN: 락 획득 실패 ($name), 타임아웃 ${timeout}초" >&2
+      return 1
+    fi
+  done
+  return 0
+}
+
+release_lock() {
+  local name="$1"
+  rmdir "$LOCK_DIR/${name}.lock" 2>/dev/null || true
+}
+
 # === 피드백 큐 함수 ===
 add_to_queue() {
   local queue_type="$1"  # classifications, calendars, labels

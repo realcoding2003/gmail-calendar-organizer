@@ -27,15 +27,13 @@ Google Cloud Console에서 다운로드한 OAuth 2.0 클라이언트 ID 파일.
 
 ```bash
 # 인증 명령
-python3 lib/google_api.py auth --account kevinpark@webace.co.kr
-python3 lib/google_api.py auth --account contact@okyc.kr
+python3 lib/google_api.py auth --account your-email@gmail.com
 ```
 
 생성되는 파일:
 
 ```text
-token_kevinpark@webace.co.kr.json
-token_contact@okyc.kr.json
+token_your-email@gmail.com.json
 ```
 
 토큰은 자동 갱신되므로 crontab 환경에서 재인증 불필요.
