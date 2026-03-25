@@ -66,7 +66,12 @@ Phase 2: 본문 포함 개별 Claude 호출
     ↓
 자동 분류 → 라벨 + 보관  |  미결정 → 큐 파일 생성  |  일정 감지 → 캘린더 큐
     ↓
+fast_patterns 학습: "이건 제목만 봐도 됐다" → sender-patterns에 저장
+    ↓
 _processed 라벨로 처리 완료 표시 (멱등)
+
+※ Phase 2에서 학습된 패턴은 다음 실행부터 Phase 1 fast로 처리됨
+→ 시간이 지날수록 Phase 2 호출 감소, Phase 1 fast 비율 증가
 ```
 
 ### 2. 피드백 처리 (feedback-processor.sh, 외부 호출)

@@ -103,14 +103,18 @@ data/queue/
 
 메모리는 분류 프롬프트에 컨텍스트로 주입. 학습이 쌓일수록 Phase 1 fast 비율이 올라감.
 
-### 학습 흐름
+### 학습 경로 (2가지)
 
 ```
-사용자 결정 → feedback-processor.sh
-  → sender-patterns.json에 발신자 패턴 추가/업데이트
-  → classification-rules.json에 오분류 수정 규칙 추가
-  → user-corrections.jsonl에 이력 기록
-  → 다음 watcher 실행 시 프롬프트에 반영
+1. Phase 2 자동 학습 (fast_patterns)
+   Phase 2에서 분류 시 "제목+발신자만 봐도 됐다" → fast_patterns 반환
+   → sender-patterns / classification-rules에 저장
+   → 다음 실행부터 Phase 1 fast로 처리 (Phase 2 호출 불필요)
+
+2. 사용자 피드백 학습 (feedback-processor)
+   사용자 결정 → feedback-processor.sh 호출
+   → AI 제안과 다른 라벨 → 오분류 기록 + 패턴 수정
+   → user-corrections.jsonl에 이력 기록
 ```
 
 ## Claude CLI 모델 사용

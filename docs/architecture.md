@@ -155,7 +155,7 @@ graph LR
     end
 
     A -->|피드백 처리 시| SP & CR & UC
-    B -->|memory_updates| SP & CR
+    B -->|fast_patterns| SP & CR
     SP & CR & UC -->|load_memory_context| P1 & P2
 
     subgraph "일간 통합"
