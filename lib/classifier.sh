@@ -212,7 +212,7 @@ for item in data.get('results', []):
                 'email_id': mid, 'account': acct,
                 'subject': title, 'from': sender, 'summary': summary,
                 'ai_suggestion': {'label': label, 'confidence': conf, 'reason': review_reason or cls_reason},
-                'decision': None, 'user_label': None, 'user_note': None
+                'action': None, 'action_arg': None
             }, f, ensure_ascii=False, indent=2)
         queue_count += 1
         print(f'QUEUE: {title[:50]} (conf:{conf:.1f}) {review_reason}')
@@ -245,7 +245,7 @@ for item in data.get('results', []):
                 },
                 'confidence': schedule.get('confidence', 0.5),
                 'needs_confirm': schedule.get('needs_confirm', True),
-                'decision': None
+                'action': None, 'action_arg': None
             }, f, ensure_ascii=False, indent=2)
         schedule_count += 1
         print(f'SCHEDULE: {schedule.get(\"summary\",\"\")} ({schedule.get(\"start\",\"\")[:16]})')
@@ -260,7 +260,7 @@ for suggestion in data.get('new_label_suggestions', []):
             'suggested_name': suggestion.get('name', ''),
             'reason': suggestion.get('reason', ''),
             'sample_subjects': suggestion.get('sample_subjects', []),
-            'accounts': [acct], 'decision': None
+            'accounts': [acct], 'action': None, 'action_arg': None
         }, f, ensure_ascii=False, indent=2)
     print(f'NEW_LABEL: {suggestion.get(\"name\",\"\")}')
 

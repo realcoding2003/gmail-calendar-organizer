@@ -72,20 +72,27 @@ _processed 라벨로 처리 완료 표시 (멱등)
 ### 2. 피드백 처리 (feedback-processor.sh, 외부 호출)
 
 ```bash
-# 단일 건 (알림 봇이 호출)
-bash bin/feedback-processor.sh <큐파일> <approve|reject|modify> [라벨]
+# 사용법
+bash bin/feedback-processor.sh <큐파일> <명령> [인수]
+
+# 명령:
+#   label <라벨명>    라벨 적용 + 보관
+#   delete            삭제 (휴지통)
+#   archive           라벨 없이 보관만
+#   skip              큐에서만 제거 (아무것도 안 함)
+#   calendar          캘린더 일정 등록
 
 # 예시
-bash bin/feedback-processor.sh data/queue/classifications/pending-abc.json approve 광고
-bash bin/feedback-processor.sh data/queue/calendars/cal-abc.json approve
-bash bin/feedback-processor.sh data/queue/classifications/pending-xyz.json reject
+bash bin/feedback-processor.sh data/queue/classifications/pending-abc.json label 광고
+bash bin/feedback-processor.sh data/queue/classifications/pending-abc.json delete
+bash bin/feedback-processor.sh data/queue/classifications/pending-abc.json archive
+bash bin/feedback-processor.sh data/queue/classifications/pending-abc.json skip
+bash bin/feedback-processor.sh data/queue/calendars/cal-abc.json calendar
 ```
 
-처리 시 자동으로:
-- Gmail 라벨 적용 + 보관 (reject 시 삭제)
-- 캘린더 일정 등록
-- 발신자 패턴 학습 (sender-patterns.json)
-- AI 오분류 수정 시 규칙 추가 (classification-rules.json)
+AI 제안과 다른 라벨을 지정하면 자동으로 오분류 학습:
+- 발신자 패턴 업데이트 (sender-patterns.json)
+- 수정 규칙 추가 (classification-rules.json)
 - 이력 기록 (user-corrections.jsonl)
 - 큐 파일 삭제
 
@@ -149,8 +156,9 @@ Claude Opus로 축적된 메모리 분석:
 4. 카카오톡 등으로 전송
 5. 사용자 답변 수신
 6. Claude CLI로 답변 해석 → decision, label 결정
-7. feedback-processor.sh 호출
-8. 처리 완료 (라벨/삭제/캘린더 + 학습 + 큐 파일 삭제)
+7. feedback-processor.sh 호출:
+   bash bin/feedback-processor.sh <파일경로> <label|delete|archive|skip|calendar> [인수]
+8. 처리 완료 (실행 + 학습 + 큐 파일 삭제)
 ```
 
 ## 디렉토리 구조
@@ -170,13 +178,14 @@ Claude Opus로 축적된 메모리 분석:
 │
 ├── config/                       # 설정
 │   ├── accounts.json             #   Gmail 계정 (enabled 플래그)
-│   ├── labels.json               #   라벨 정의
+│   ├── accounts.example.json      #   계정 설정 예시
 │   └── prompts/                  #   Claude 프롬프트 템플릿
 │       ├── pre-classify.txt      #     Phase 1 사전 분류
 │       ├── classify-email.txt    #     Phase 2 상세 분류
 │       └── consolidate-memory.txt#     메모리 통합
 │
 ├── data/                         # 런타임 (.gitignore)
+│   ├── labels.json               #   사용자 라벨 정의 (대화로 추가)
 │   ├── memory/                   #   학습 데이터
 │   │   ├── sender-patterns.json  #     발신자 → 라벨
 │   │   ├── classification-rules.json  # 키워드 규칙

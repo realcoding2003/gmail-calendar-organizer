@@ -1,0 +1,22 @@
+{
+  "labels": [
+    {
+      "name": "소셜",
+      "description": "SNS 알림",
+      "default_archive": true
+    },
+    {
+      "name": "광고",
+      "description": "광고, 뉴스레터, 프로모션",
+      "default_archive": true
+    },
+    {
+      "name": "금융-결제",
+      "description": "결제, 청구서, 카드 명세",
+      "default_archive": true
+    }
+  ],
+  "schedule_keywords": [
+    "일정", "약속", "미팅", "meeting", "날짜", "시간"
+  ]
+}

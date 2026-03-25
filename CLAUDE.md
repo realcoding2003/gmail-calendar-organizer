@@ -18,8 +18,12 @@ bash bin/email-watcher.sh --all              # 전체 미처리
 bash bin/email-watcher.sh --all --rounds=5   # 전체, 5라운드
 
 # 피드백 처리 (외부 시스템이 호출)
-bash bin/feedback-processor.sh <큐파일> <approve|reject|modify> [라벨]
-bash bin/feedback-processor.sh --all         # decision 설정된 전체 처리
+bash bin/feedback-processor.sh <큐파일> label <라벨명>   # 라벨 적용 + 보관
+bash bin/feedback-processor.sh <큐파일> delete            # 삭제
+bash bin/feedback-processor.sh <큐파일> archive           # 보관만
+bash bin/feedback-processor.sh <큐파일> skip              # 큐에서만 제거
+bash bin/feedback-processor.sh <큐파일> calendar          # 캘린더 등록
+bash bin/feedback-processor.sh --all                      # action 설정된 전체 처리
 
 # Google API
 python3 lib/google_api.py gmail messages-search --query "in:inbox" --max 20 --account EMAIL
@@ -49,7 +53,7 @@ data/queue/
 2. decision: null인 파일 발견 → 사용자에게 질문
 3. 사용자 답변 수신
 4. feedback-processor.sh 호출:
-   bash bin/feedback-processor.sh <파일경로> <approve|reject|modify> [라벨]
+   bash bin/feedback-processor.sh <파일경로> <label|delete|archive|skip|calendar> [인수]
 5. 처리 완료 (라벨/삭제/캘린더 + 메모리 학습 + 파일 삭제)
 ```
 
@@ -142,9 +146,10 @@ data/queue/
 │   └── google_api.py               Google API OAuth
 ├── config/                       설정
 │   ├── accounts.json               계정 (enabled 플래그)
-│   ├── labels.json                 라벨 정의
+│   ├── accounts.example.json        계정 설정 예시
 │   └── prompts/                    Claude 프롬프트 템플릿
 ├── data/                         런타임 (.gitignore)
+│   ├── labels.json                 사용자 라벨 정의 (대화로 추가)
 │   ├── memory/                     학습 데이터
 │   └── queue/                      피드백 큐 (1건=1파일)
 │       ├── classifications/

@@ -234,7 +234,7 @@ print(raw[start:end])
 load_label_descriptions() {
   python3 -c "
 import json
-with open('$CONFIG_DIR/labels.json') as f:
+with open('$DATA_DIR/labels.json') as f:
     data = json.load(f)
 for label in data.get('labels', []):
     name = label['name']
