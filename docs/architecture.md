@@ -12,7 +12,7 @@ graph TB
     subgraph "Mac Mini — 이 프로젝트"
         subgraph "Cron"
             W[email-watcher.sh<br/>5분마다]
-            MC[memory-consolidator.sh<br/>주 1회 월 03시]
+            MC[memory-consolidator.sh<br/>매일 03시]
         end
 
         subgraph "외부 호출"
@@ -158,7 +158,7 @@ graph LR
     B -->|memory_updates| SP & CR
     SP & CR & UC -->|load_memory_context| P1 & P2
 
-    subgraph "주간 통합"
+    subgraph "일간 통합"
         MC[memory-consolidator<br/>Claude Opus]
     end
 
@@ -197,4 +197,4 @@ data/queue/
 | 스레드 검색 N+1 | Gmail batch API로 1회 호출 |
 | 라벨 적용 건별 subprocess | Google API 클라이언트 1회 초기화 |
 | Phase 2 과다 호출 | Phase 1에서 메모리 기반 fast 처리 비율 높임 |
-| 메모리 무한 증가 | 주간 Opus 통합으로 정리 |
+| 메모리 무한 증가 | 매일 Opus 통합으로 정리 |

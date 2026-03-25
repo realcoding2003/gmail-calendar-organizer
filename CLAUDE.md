@@ -7,7 +7,7 @@ Google API 직접 호출 + Claude Code CLI 기반.
 
 - `bin/email-watcher.sh` — cron 5분, 메일 분류 (Phase 1 일괄 → Phase 2 개별)
 - `bin/feedback-processor.sh` — 외부 호출, 사용자 결정 실행 + 메모리 학습
-- `bin/memory-consolidator.sh` — cron 주 1회, Claude Opus로 메모리 최적화
+- `bin/memory-consolidator.sh` — cron 매일, Claude Opus로 메모리 최적화
 
 ## 핵심 명령어
 
@@ -119,7 +119,7 @@ data/queue/
 | --- | --- | --- |
 | Phase 1 사전 분류 | Sonnet | 5분마다 |
 | Phase 2 상세 분류 | Sonnet | 미결정 건만 |
-| 메모리 통합 | Opus | 주 1회 |
+| 메모리 통합 | Opus | 매일 |
 
 ## 코딩 규칙
 
@@ -137,7 +137,7 @@ data/queue/
 ├── bin/                          실행 스크립트
 │   ├── email-watcher.sh            메일 분류 (cron 5분)
 │   ├── feedback-processor.sh       피드백 처리 (외부 호출)
-│   └── memory-consolidator.sh      메모리 최적화 (cron 주 1회)
+│   └── memory-consolidator.sh      메모리 최적화 (cron 매일)
 ├── lib/                          공통 라이브러리
 │   ├── common.sh                   경로, 유틸
 │   ├── classifier.sh               Claude 프롬프트 + 결과 처리

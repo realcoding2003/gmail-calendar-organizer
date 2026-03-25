@@ -35,7 +35,7 @@ Google API 직접 호출 + Claude Code CLI 기반.
 │  └──────────────┘    │ corrections  │                      │
 │                      └──────────────┘                      │
 │  ┌──────────────┐           ▲                               │
-│  │ memory-      │───────────┘ 주 1회 최적화                 │
+│  │ memory-      │───────────┘ 매일 최적화                 │
 │  │ consolidator │    Claude Opus                            │
 │  │ cron 월 03시 │                                           │
 │  └──────────────┘                                           │
@@ -96,7 +96,7 @@ AI 제안과 다른 라벨을 지정하면 자동으로 오분류 학습:
 - 이력 기록 (user-corrections.jsonl)
 - 큐 파일 삭제
 
-### 3. 메모리 통합 (memory-consolidator.sh, cron 주 1회)
+### 3. 메모리 통합 (memory-consolidator.sh, cron 매일)
 
 Claude Opus로 축적된 메모리 분석:
 - 중복 패턴 병합, 미사용 패턴 제거
@@ -167,7 +167,7 @@ Claude Opus로 축적된 메모리 분석:
 ├── bin/                          # 실행 스크립트
 │   ├── email-watcher.sh          #   메일 분류 (cron 5분)
 │   ├── feedback-processor.sh     #   피드백 처리 (외부 호출)
-│   └── memory-consolidator.sh    #   메모리 최적화 (cron 주 1회)
+│   └── memory-consolidator.sh    #   메모리 최적화 (cron 매일)
 │
 ├── lib/                          # 공통 라이브러리
 │   ├── common.sh                 #   경로, 유틸, 락 함수
@@ -206,7 +206,7 @@ Claude Opus로 축적된 메모리 분석:
 |------|------|----------|
 | Phase 1 사전 분류 | Sonnet | 5분마다 |
 | Phase 2 상세 분류 | Sonnet | 미결정 건만 |
-| 메모리 통합 | Opus | 주 1회 |
+| 메모리 통합 | Opus | 매일 |
 
 ## 라벨 목록
 
