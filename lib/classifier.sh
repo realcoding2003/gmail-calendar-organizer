@@ -188,6 +188,7 @@ for item in data.get('results', []):
 
     title = log_entry.get('title', '')
     sender = log_entry.get('from', '')
+    mail_date = log_entry.get('date', '')
     urgency = log_entry.get('urgency', 'none')
     summary = log_entry.get('summary', '')
 
@@ -209,7 +210,8 @@ for item in data.get('results', []):
             json.dump({
                 'id': item_id, 'created': now_kst,
                 'email_id': mid, 'account': acct,
-                'subject': title, 'from': sender, 'summary': summary,
+                'subject': title, 'from': sender, 'date': mail_date,
+                'summary': summary,
                 'ai_suggestion': {'label': label, 'confidence': conf, 'reason': review_reason or cls_reason},
                 'action': None, 'action_arg': None
             }, f, ensure_ascii=False, indent=2)

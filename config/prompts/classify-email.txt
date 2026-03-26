@@ -19,6 +19,7 @@
       "log": {
         "title": "메일 제목",
         "from": "발신자",
+        "date": "메일 수신 날짜 (원본 그대로)",
         "urgency": "high/normal/none",
         "summary": "메일 내용 요약 한줄"
       }
