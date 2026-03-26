@@ -93,7 +93,7 @@ for acct in "${ACCOUNTS[@]}"; do
 
   # 스레드 20개 가져오기
   T0=$(date +%s)
-  THREAD_LIST=$(search_threads "-label:${PROCESSED_LABEL} -in:trash -in:spam -in:drafts ${DATE_FILTER}" "$acct" "$BATCH_SIZE")
+  THREAD_LIST=$(search_threads "in:inbox -label:${PROCESSED_LABEL} -in:trash -in:spam -in:drafts ${DATE_FILTER}" "$acct" "$BATCH_SIZE")
   THREAD_COUNT=$(count_threads "$THREAD_LIST")
   [ "$THREAD_COUNT" -eq 0 ] && { echo "[$acct] 미처리 스레드 없음"; continue; }
 
