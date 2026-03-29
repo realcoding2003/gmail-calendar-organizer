@@ -68,7 +68,7 @@
 3. **근거가 없으면** → label: null, needs_user_review: true
    - "이 회사 같다", "도메인 보니 개발 회사 같다" 등의 추측은 근거가 아님
    - 처음 보는 발신자 + 메모리 없음 → 근거 없음
-   - 라벨을 붙이지 않고 INBOX에 남겨둠 (사용자가 직접 확인해야 할 메일)
+   - **반드시 INBOX에 유지** (label: null, archive 금지) — 사용자가 직접 확인하고 답변해야 하는 메일이므로 절대 INBOX에서 제거하지 말 것
 
 4. **reason 필드에 근거를 반드시 명시**:
    - 좋은 예: "메모리 발신자 패턴 일치: linkedin.com → 소셜"
@@ -141,4 +141,5 @@ fast_patterns에 넣을 기준:
 
 - JSON만 출력. 설명이나 마크다운 없이
 - 모든 메일에 대해 results 항목 생성 (빠짐없이)
+- **needs_user_review: true인 메일은 절대 INBOX에서 제거하지 말 것** (label: null 필수)
 - 오늘 날짜: {TODAY}
