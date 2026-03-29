@@ -19,7 +19,7 @@ Mac Mini M4 (16GB) 기준, crontab + Ollama 로컬 LLM으로 동작.
 
 ```bash
 # 1. Ollama 모델 설치
-ollama pull qwen3:14b
+ollama pull phi4
 
 # 2. Python 의존성
 pip3 install google-auth google-auth-oauthlib google-api-python-client
@@ -94,7 +94,7 @@ python3 lib/google_api.py calendar create CAL_ID --summary TITLE --from START --
 
 | 환경변수 | 기본값 | 설명 |
 | --- | --- | --- |
-| `LLM_MODEL` | `qwen3:14b` | Ollama 모델명 |
+| `LLM_MODEL` | `phi4` | Ollama 모델명 |
 | `LLM_BASE_URL` | `http://localhost:11434` | Ollama 서버 URL |
 
 호출 흐름: `llm_call()` (common.sh) → 임시 파일 → `python3 lib/llm_call.py` → Ollama `/api/generate`

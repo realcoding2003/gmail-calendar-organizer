@@ -29,7 +29,7 @@ git clone https://github.com/OKAI-crew/gmail-calendar-organizer.git
 cd gmail-calendar-organizer
 
 # 2. Ollama 모델 설치
-ollama pull qwen3:14b
+ollama pull phi4
 
 # 3. Python 의존성
 pip3 install google-auth google-auth-oauthlib google-api-python-client
@@ -79,7 +79,7 @@ bash bin/memory-consolidator.sh
 │                                                             │
 │  ┌─────────────┐    ┌──────────────┐    ┌───────────────┐  │
 │  │ email-      │    │ Google API   │    │ Ollama LLM    │  │
-│  │ watcher.sh  │───▶│ gmail / cal  │    │ (qwen3:14b)   │  │
+│  │ watcher.sh  │───▶│ gmail / cal  │    │ (phi4)    │  │
 │  │ cron 5분    │    │ lib/         │    │ Phase2: 개별  │  │
 │  │             │───▶│ google_api.py│    │               │  │
 │  └──────┬──────┘    └──────────────┘    └───────────────┘  │
@@ -125,13 +125,25 @@ Phase 2: 본문 포함 LLM 분류 (Ollama)
 
 | 환경변수 | 기본값 | 설명 |
 | --- | --- | --- |
-| `LLM_MODEL` | `qwen3:14b` | Ollama 모델명 |
+| `LLM_MODEL` | `phi4` | Ollama 모델명 |
 | `LLM_BASE_URL` | `http://localhost:11434` | Ollama 서버 URL |
 
 ```bash
 # 다른 모델로 실행
-LLM_MODEL=llama3:8b bash bin/email-watcher.sh
+LLM_MODEL=phi4-mini bash bin/email-watcher.sh
 ```
+
+#### 테스트된 모델 후보군
+
+Mac Mini M4 16GB 기준으로 테스트한 결과입니다.
+
+| 모델 | 파라미터 | 크기 | 16GB 체감 속도 | 비고 |
+| --- | --- | --- | --- | --- |
+| **`phi4`** | 14B | 9.1GB | 보통 | **현재 기본값.** 추론 성능 우수, 분류 품질 좋음 |
+| `phi4-mini` | 3.8B | 2.5GB | 빠름 | 가볍고 빠르지만 한국어 분류 품질 열세 |
+| `qwen3:8b` | 8B | 5.2GB | 쾌적 | 한국어 우수, 속도와 품질의 균형 |
+| `qwen3:14b` | 14B | 9.3GB | 느림 | 한국어 최상, 16GB에서 메모리 부족 발생 가능 |
+| `gpt-oss:20b` | 20B | 13GB | 매우 느림 | 16GB에서 CPU 오프로딩으로 실사용 어려움 |
 
 ### 계정 설정
 

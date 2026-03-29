@@ -71,7 +71,7 @@ ${CORRECTIONS}
 ${LOG_STATS}"
 
 # Ollama LLM으로 분석
-echo "  LLM 분석 중 (${LLM_MODEL:-qwen3:14b})..."
+echo "  LLM 분석 중 (${LLM_MODEL:-phi4})..."
 T0=$(date +%s)
 
 RESULT=$(llm_call "$PROMPT" 2>/dev/null || echo "")
