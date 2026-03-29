@@ -3,8 +3,8 @@
 # "_processed" 라벨 없는 스레드만 대상 (멱등, 날짜 제한 없음)
 # 스레드 단위 처리: 주고받은 메일을 한 번에 그룹핑
 #
-# Phase 1: 제목+발신자만 Claude에 일괄 → fast/need_body
-# Phase 2: need_body만 본문 포함 개별 Claude 호출
+# Phase 1: 제목+발신자만 LLM에 일괄 → fast/need_body
+# Phase 2: need_body만 본문 포함 개별 LLM 호출
 # 1배치(20 스레드) 처리 후 종료, 나머지는 다음 cron에서
 
 set -euo pipefail
@@ -122,7 +122,7 @@ print(json.dumps({'messages': messages}, ensure_ascii=False))
   T1=$(date +%s)
   echo "  Phase 1: 사전 분류 (제목+발신자만)..."
   PRE_RESULT=$(pre_classify "$MAIL_LIST" "$acct") || true
-  echo "  Phase 1 Claude: $(elapsed $T1)"
+  echo "  Phase 1 LLM: $(elapsed $T1)"
 
   NEED_BODY_IDS=""
   TOTAL_FAST=0

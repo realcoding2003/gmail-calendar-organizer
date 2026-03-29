@@ -230,6 +230,18 @@ print(raw[start:end])
 " 2>/dev/null
 }
 
+# === LLM 호출 (Ollama) ===
+llm_call() {
+  local prompt="$1"
+  local tmpfile
+  tmpfile=$(mktemp /tmp/llm_XXXXXX.txt)
+  printf '%s' "$prompt" > "$tmpfile"
+  python3 "$LIB_DIR/llm_call.py" "$tmpfile"
+  local status=$?
+  rm -f "$tmpfile"
+  return $status
+}
+
 # === 라벨 로드 ===
 load_label_descriptions() {
   python3 -c "

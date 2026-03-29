@@ -1,6 +1,6 @@
 #!/bin/bash
 # 메모리 통합 - 주 1회 cron 실행
-# Claude Opus + Extended Thinking으로 메모리 분석 + 최적화
+# Ollama (gpt-oss:20b)으로 메모리 분석 + 최적화
 #
 # 1. 현재 메모리 + 수정 이력 → Claude가 분석
 # 2. 패턴 병합/정리/충돌 감지
@@ -70,11 +70,11 @@ ${CORRECTIONS}
 === 최근 7일 분류 통계 ===
 ${LOG_STATS}"
 
-# Claude Opus + Extended Thinking으로 분석
-echo "  Claude Opus 분석 중..."
+# Ollama (gpt-oss:20b)으로 분석
+echo "  LLM 분석 중 (gpt-oss:20b)..."
 T0=$(date +%s)
 
-RESULT=$(claude --print --model opus --allowed-tools "" -- "$PROMPT" 2>/dev/null || echo "")
+RESULT=$(llm_call "$PROMPT" 2>/dev/null || echo "")
 
 T1=$(date +%s)
 echo "  분석 완료: $((T1 - T0))초"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude 분류 시스템
+# LLM 분류 시스템 (Ollama: gpt-oss:20b)
 # Phase 1: 사전 분류 — 메일 목록(제목+발신자)을 일괄 판단 → fast/need_body 분류
 # Phase 2: 상세 분류 — need_body 메일만 본문 포함하여 개별 AI 분류
 # === Phase 1: 사전 분류 (제목+발신자만, 일괄) ===
@@ -38,7 +38,7 @@ ${memory_ctx}
 === 메일 목록 ===
 $light_list"
 
-  claude --print --model sonnet --allowed-tools "" -- "$prompt" 2>/dev/null || echo '{"fast":[],"need_body":[]}'
+  llm_call "$prompt" 2>/dev/null || echo '{"fast":[],"need_body":[]}'
 }
 
 # === Phase 1 결과 처리: fast 항목 라벨 적용 (직접 API, subprocess 없음) ===
@@ -132,7 +132,7 @@ ${label_desc}
 $emails"
 }
 
-# === Phase 2: Claude CLI 호출 ===
+# === Phase 2: LLM 호출 ===
 classify_emails() {
   local emails="$1"
   local acct="$2"
@@ -140,7 +140,7 @@ classify_emails() {
   local prompt
   prompt=$(build_classify_prompt "$emails" "$acct")
 
-  claude --print --model sonnet --allowed-tools "" -- "$prompt" 2>/dev/null || echo '{"results":[],"new_label_suggestions":[],"fast_patterns":[]}'
+  llm_call "$prompt" 2>/dev/null || echo '{"results":[],"new_label_suggestions":[],"fast_patterns":[]}'
 }
 
 # === Phase 2: 분류 결과 처리 ===
