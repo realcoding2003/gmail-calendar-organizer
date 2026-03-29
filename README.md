@@ -1,26 +1,26 @@
 # Gmail + Calendar 자동화 시스템
 
-**Claude Code CLI 기반 AI 이메일 자동 분류 솔루션.**
+**Ollama 로컬 LLM 기반 AI 이메일 자동 분류 솔루션.**
 
-Mac Mini 같은 미니 PC에서 crontab으로 구동. Google API 직접 호출 + Claude Code CLI(`claude --print`)로 AI 판단. 별도 API 키 불필요 — Claude 구독만으로 동작.
+Mac Mini 같은 미니 PC에서 crontab으로 구동. Google API 직접 호출 + Ollama 로컬 LLM으로 AI 판단. 외부 API 의존 없이 로컬에서 완결.
 
 ## 요구사항
 
-- **Claude Pro 또는 Max 구독** (Claude Code CLI 사용)
-- **Max 추천** — 5분마다 cron 실행으로 호출 빈도가 높아 Pro는 rate limit에 걸릴 수 있음
+- **macOS** (Apple Silicon 권장, Mac Mini M4 16GB 기준 개발)
+- **[Ollama](https://ollama.com)** — 로컬 LLM 서버
 - Python 3.10+, Google Cloud OAuth 인증
 
 ## 아키텍처
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  Mac Mini (이 프로젝트)                                      │
 │                                                             │
 │  ┌─────────────┐    ┌──────────────┐    ┌───────────────┐  │
-│  │ email-      │    │ Google API   │    │ Claude CLI    │  │
-│  │ watcher.sh  │───▶│ gmail / cal  │    │ (Sonnet)      │  │
-│  │ cron 5분    │    │ lib/         │    │ Phase1: 일괄  │  │
-│  │             │───▶│ google_api.py│    │ Phase2: 개별  │  │
+│  │ email-      │    │ Google API   │    │ Ollama LLM    │  │
+│  │ watcher.sh  │───▶│ gmail / cal  │    │ (qwen3:14b)   │  │
+│  │ cron 5분    │    │ lib/         │    │ Phase2: 개별  │  │
+│  │             │───▶│ google_api.py│    │               │  │
 │  └──────┬──────┘    └──────────────┘    └───────────────┘  │
 │         │                                                   │
 │         │ 미결정 건                                          │
@@ -43,8 +43,8 @@ Mac Mini 같은 미니 PC에서 crontab으로 구동. Google API 직접 호출 +
 │                      └──────────────┘                      │
 │  ┌──────────────┐           ▲                               │
 │  │ memory-      │───────────┘ 매일 최적화                 │
-│  │ consolidator │    Claude Opus                            │
-│  │ cron 월 03시 │                                           │
+│  │ consolidator │    Ollama LLM                             │
+│  │ cron 매일    │                                           │
 │  └──────────────┘                                           │
 └─────────────────────────────────────────────────────────────┘
          ▲                    │
@@ -53,8 +53,8 @@ Mac Mini 같은 미니 PC에서 crontab으로 구동. Google API 직접 호출 +
 ┌─────────────────────────────────────────────────────────────┐
 │  별도 프로젝트 (알림 봇)                                      │
 │                                                             │
-│  큐 감지 → Claude CLI로 질문 생성 → 카카오톡 전송            │
-│  사용자 답변 → Claude CLI로 해석 → feedback-processor 호출   │
+│  큐 감지 → 질문 생성 → 카카오톡 전송                        │
+│  사용자 답변 → 답변 해석 → feedback-processor 호출           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -62,14 +62,14 @@ Mac Mini 같은 미니 PC에서 crontab으로 구동. Google API 직접 호출 +
 
 ### 1. 메일 분류 (email-watcher.sh, cron 5분)
 
-```
+```text
 미처리 스레드 20개 조회 (Gmail API batch)
     ↓
-Phase 1: 제목+발신자만 Claude Sonnet에 일괄 전송
+Phase 1: 제목+발신자로 메모리 패턴 매칭 (LLM 미사용, 프로그래밍 방식)
     ↓
 fast → 즉시 라벨 + 보관  |  need_body → Phase 2로
     ↓
-Phase 2: 본문 포함 개별 Claude 호출
+Phase 2: 본문 포함 개별 LLM 호출 (Ollama)
     ↓
 자동 분류 → 라벨 + 보관  |  미결정 → 큐 파일 생성  |  일정 감지 → 캘린더 큐
     ↓
@@ -110,7 +110,7 @@ AI 제안과 다른 라벨을 지정하면 자동으로 오분류 학습:
 
 ### 3. 메모리 통합 (memory-consolidator.sh, cron 매일)
 
-Claude Opus로 축적된 메모리 분석:
+LLM으로 축적된 메모리 분석:
 - 중복 패턴 병합, 미사용 패턴 제거
 - 규칙 간 충돌 감지, 정확도 리포트
 
@@ -161,21 +161,38 @@ Claude Opus로 축적된 메모리 분석:
 
 ### 외부 연동 흐름
 
-```
+```text
 1. 큐 디렉토리 감시 (fswatch 또는 polling)
 2. decision: null인 파일 발견
-3. Claude CLI로 사용자에게 보낼 질문 생성
+3. 사용자에게 보낼 질문 생성
 4. 카카오톡 등으로 전송
 5. 사용자 답변 수신
-6. Claude CLI로 답변 해석 → decision, label 결정
+6. 답변 해석 → decision, label 결정
 7. feedback-processor.sh 호출:
    bash bin/feedback-processor.sh <파일경로> <label|delete|archive|skip|calendar> [인수]
 8. 처리 완료 (실행 + 학습 + 큐 파일 삭제)
 ```
 
+## 로컬 LLM 설정
+
+Ollama REST API 사용. `lib/llm_call.py`가 래퍼.
+
+| 환경변수 | 기본값 | 설명 |
+| --- | --- | --- |
+| `LLM_MODEL` | `qwen3:14b` | Ollama 모델명 |
+| `LLM_BASE_URL` | `http://localhost:11434` | Ollama 서버 URL |
+
+```bash
+# Ollama 설치 후 모델 다운로드
+ollama pull qwen3:14b
+
+# 환경변수로 모델 변경 가능
+LLM_MODEL=llama3:8b bash bin/email-watcher.sh
+```
+
 ## 디렉토리 구조
 
-```
+```text
 ├── bin/                          # 실행 스크립트
 │   ├── email-watcher.sh          #   메일 분류 (cron 5분)
 │   ├── feedback-processor.sh     #   피드백 처리 (외부 호출)
@@ -183,21 +200,23 @@ Claude Opus로 축적된 메모리 분석:
 │
 ├── lib/                          # 공통 라이브러리
 │   ├── common.sh                 #   경로, 유틸, 락 함수
-│   ├── classifier.sh             #   Claude 프롬프트 빌드 + 결과 처리
+│   ├── classifier.sh             #   패턴 매칭 + LLM 프롬프트 + 결과 처리
 │   ├── gmail-actions.sh          #   Gmail 검색/라벨 래핑
 │   ├── calendar-actions.sh       #   캘린더 래핑
-│   └── google_api.py             #   Google API OAuth 호출
+│   ├── google_api.py             #   Google API OAuth 호출
+│   └── llm_call.py               #   Ollama REST API 래퍼
 │
 ├── config/                       # 설정
-│   ├── accounts.json             #   Gmail 계정 (enabled 플래그)
-│   ├── accounts.example.json      #   계정 설정 예시
-│   └── prompts/                  #   Claude 프롬프트 템플릿
+│   ├── accounts.json             #   Gmail 계정 (.gitignore)
+│   ├── accounts.example.json     #   계정 설정 예시
+│   ├── community/                #   커뮤니티 프리빌트 패턴
+│   └── prompts/                  #   LLM 프롬프트 템플릿
 │       ├── pre-classify.txt      #     Phase 1 사전 분류
 │       ├── classify-email.txt    #     Phase 2 상세 분류
 │       └── consolidate-memory.txt#     메모리 통합
 │
 ├── data/                         # 런타임 (.gitignore)
-│   ├── labels.json               #   사용자 라벨 정의 (대화로 추가)
+│   ├── labels.json               #   사용자 라벨 정의
 │   ├── memory/                   #   학습 데이터
 │   │   ├── sender-patterns.json  #     발신자 → 라벨
 │   │   ├── classification-rules.json  # 키워드 규칙
@@ -208,21 +227,8 @@ Claude Opus로 축적된 메모리 분석:
 │       └── labels/               #     라벨 제안
 │
 ├── logs/                         # 로그 (.gitignore)
-├── .credentials/                 # OAuth 인증 (.gitignore)
-└── crontab.txt
+└── .credentials/                 # OAuth 인증 (.gitignore)
 ```
-
-## Claude CLI 모델
-
-| 용도 | 모델 | 호출 빈도 |
-|------|------|----------|
-| Phase 1 사전 분류 | Sonnet | 5분마다 |
-| Phase 2 상세 분류 | Sonnet | 미결정 건만 |
-| 메모리 통합 | Opus | 매일 |
-
-## 라벨 목록
-
-소셜, 광고, 금융-결제, 세금계산서, 보안, 정부-R&D, 보험, 개발-테크, 도메인-호스팅, 소프트웨어 라이센스, 법무-행정, 회의록, HR, 고객-웹개발, 알찬웹장부
 
 ## 명령어
 
@@ -252,8 +258,21 @@ python3 lib/google_api.py auth --account EMAIL
 ## 설치
 
 ```bash
+# 1. Ollama 설치 (https://ollama.com)
+ollama pull qwen3:14b
+
+# 2. Python 의존성
 pip3 install google-auth google-auth-oauthlib google-api-python-client
+
+# 3. Google OAuth 설정
 cp credentials.json .credentials/
+cp config/accounts.example.json config/accounts.json  # 계정 설정 편집
 python3 lib/google_api.py auth --account YOUR_EMAIL
+
+# 4. Cron 등록
 crontab crontab.txt
 ```
+
+## 라이선스
+
+MIT
