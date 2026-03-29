@@ -1,0 +1,138 @@
+{
+  "_comment": "커뮤니티 공용 분류 규칙 — 누구나 재사용 가능한 범용 키워드 패턴 모음",
+  "_usage": "data/memory/classification-rules.json 의 rules에 병합하여 사용",
+  "version": 1,
+  "rules": [
+
+    {
+      "id": "community-tax-invoice",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "세금계산서"
+      },
+      "action": { "label": "세금계산서", "archive": true },
+      "confidence": 0.95,
+      "note": "전자세금계산서 발행/수신 — 금융-결제와 별도 라벨"
+    },
+    {
+      "id": "community-credit-en",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "Credit"
+      },
+      "action": { "label": "금융-결제", "archive": true },
+      "confidence": 0.9,
+      "note": "AWS Credit, 서비스 크레딧 등 — 나중에 사용해야 할 금융 항목"
+    },
+    {
+      "id": "community-credit-ko",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "크레딧"
+      },
+      "action": { "label": "금융-결제", "archive": true },
+      "confidence": 0.9,
+      "note": "클라우드/서비스 크레딧 관련 금융 처리 메일"
+    },
+    {
+      "id": "community-meeting-notes",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "Meeting Notes"
+      },
+      "action": { "label": "회의록", "archive": true },
+      "confidence": 0.95,
+      "note": "Genspark, Otter.ai 등 AI 회의록 서비스 자동 발송"
+    },
+    {
+      "id": "community-mou",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "업무협약서"
+      },
+      "action": { "label": "법무-행정", "archive": true },
+      "confidence": 0.9,
+      "note": "MOU/업무협약 관련 메일"
+    },
+    {
+      "id": "community-iso",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "ISO인증 심사"
+      },
+      "action": { "label": "법무-행정", "archive": true },
+      "confidence": 0.9,
+      "note": "ISO 인증 심사 안내/일정"
+    },
+    {
+      "id": "community-career-cert",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "경력증명서"
+      },
+      "action": { "label": "HR", "archive": true },
+      "confidence": 0.9,
+      "note": "경력증명서 발급 요청/처리"
+    },
+    {
+      "id": "community-invoice-inquiry",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "계산서 건으로"
+      },
+      "action": { "label": "금융-결제", "archive": true },
+      "confidence": 0.9,
+      "note": "계산서 청구/미납 문의 제목 패턴"
+    },
+    {
+      "id": "community-gov-support",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "지원사업"
+      },
+      "action": { "label": "정부-R&D", "archive": true },
+      "confidence": 0.9,
+      "note": "정부 지원사업 공고/결과 관련 메일"
+    },
+    {
+      "id": "community-gov-report",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "지원사업 결과보고서"
+      },
+      "action": { "label": "정부-R&D", "archive": true },
+      "confidence": 0.95,
+      "note": "정부 R&D 과제 결과보고서 제출"
+    },
+    {
+      "id": "community-clarification",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "소명요청"
+      },
+      "action": { "label": "정부-R&D", "archive": true },
+      "confidence": 0.9,
+      "note": "정부 R&D 과제 정산 감사 소명요청"
+    },
+    {
+      "id": "community-quality-cert",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "품질인증"
+      },
+      "action": { "label": "정부-R&D", "archive": true },
+      "confidence": 0.9,
+      "note": "데이터 품질인증 등 정부 공인 인증 사업"
+    },
+    {
+      "id": "community-terms-update",
+      "pattern": {
+        "from_contains": null,
+        "subject_contains": "이용약관 개정 안내"
+      },
+      "action": { "label": "금융-결제", "archive": true },
+      "confidence": 0.85,
+      "note": "서비스 이용약관 개정 통보 — 금융/서비스 정책 변경"
+    }
+  ]
+}

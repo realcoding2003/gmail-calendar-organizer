@@ -1,0 +1,173 @@
+{
+  "_comment": "커뮤니티 공용 발신자 패턴 — 누구나 재사용 가능한 범용 패턴 모음",
+  "_usage": "data/memory/sender-patterns.json 의 patterns에 병합하여 사용",
+  "version": 1,
+  "patterns": {
+
+    "_section_global": "=== 글로벌 서비스 ===",
+
+    "ads-noreply@google.com": {
+      "label": "금융-결제",
+      "archive": true,
+      "note": "Google Ads 계정 알림 — 광고비 청구/계정 상태 (광고 메일이 아님)"
+    },
+    "workspace-noreply@google.com": {
+      "label": "개발-테크",
+      "archive": true,
+      "note": "Google Workspace 관리자 알림 — 기술 인프라 변경 공지"
+    },
+    "googleplay-noreply@google.com": {
+      "label": "개발-테크",
+      "archive": true,
+      "note": "Google Play 개발자 서비스 업데이트 알림"
+    },
+    "googlecloud@google.com": {
+      "label": "광고",
+      "archive": true,
+      "note": "Google Cloud 마케팅 — 이벤트/포럼 프로모션 메일"
+    },
+    "GoogleCloudStartups@google.com": {
+      "label": "광고",
+      "archive": true,
+      "note": "Google Cloud Startups 뉴스레터 — 제품 프로모션 메일"
+    },
+    "azure-noreply@microsoft.com": {
+      "label": "개발-테크",
+      "archive": true,
+      "note": "Microsoft Azure 서비스 알림"
+    },
+    "marketplace.aws": {
+      "label": "소프트웨어 라이센스",
+      "archive": true,
+      "note": "AWS Marketplace 구독/오퍼 수락 알림"
+    },
+    "aws-marketing-email-replies@amazon.com": {
+      "label": "금융-결제",
+      "archive": true,
+      "note": "AWS Credit/프로모션 코드 발송 주소"
+    },
+    "awscustomercouncil.com": {
+      "label": null,
+      "archive": false,
+      "note": "AWS 고객 설문조사 — 분류 없이 INBOX 유지"
+    },
+    "vercel.com": {
+      "label": "개발-테크",
+      "archive": true,
+      "note": "Vercel 플랫폼 알림 — 배포/인프라 공지"
+    },
+    "godaddy.com": {
+      "label": "도메인-호스팅",
+      "archive": true,
+      "note": "GoDaddy 도메인/호스팅 알림"
+    },
+    "no-reply@calendly.com": {
+      "label": "소프트웨어 라이센스",
+      "archive": true,
+      "note": "Calendly 구독/플랜 관련 알림"
+    },
+    "zettle.com": {
+      "label": "금융-결제",
+      "archive": true,
+      "note": "Zettle(PayPal 계열) 결제 영수증"
+    },
+    "genspark.ai": {
+      "label": "회의록",
+      "archive": true,
+      "note": "Genspark AI Meeting Notes 자동 발송"
+    },
+    "adobe.com": {
+      "label": "금융-결제",
+      "archive": true,
+      "note": "Adobe 결제/청구서/면세 거래 알림"
+    },
+    "hypeauditor.com": {
+      "label": "광고",
+      "archive": true,
+      "note": "인플루언서 마케팅 SaaS 영업 메일"
+    },
+    "notice.skywork.ai": {
+      "label": "금융-결제",
+      "archive": true,
+      "note": "Skywork AI 포인트/크레딧 알림"
+    },
+
+    "_section_korean": "=== 한국 공통 서비스 ===",
+
+    "hometax.go.kr": {
+      "label": "세금계산서",
+      "archive": true,
+      "note": "국세청 홈택스 — 전자세금계산서 발행/수신"
+    },
+    "rcms.go.kr": {
+      "label": "정부-R&D",
+      "archive": true,
+      "note": "RCMS 실시간통합연구비관리시스템 — 정부 R&D 과제 관리"
+    },
+    "bill36524.com": {
+      "label": "세금계산서",
+      "archive": true,
+      "note": "전자세금계산서 발행 플랫폼"
+    },
+    "makebill.co.kr": {
+      "label": "세금계산서",
+      "archive": true,
+      "note": "전자세금계산서 발행 플랫폼"
+    },
+    "yessign@kftc.or.kr": {
+      "label": "보안",
+      "archive": true,
+      "note": "금융결제원 공인인증서 만료/갱신 안내"
+    },
+    "shinhan.com": {
+      "label": "금융-결제",
+      "archive": true,
+      "note": "신한은행 공식 발신 도메인"
+    },
+    "kbanknow.com": {
+      "label": "금융-결제",
+      "archive": true,
+      "note": "케이뱅크 고객센터 발신"
+    },
+    "kosmes.or.kr": {
+      "label": "정부-R&D",
+      "archive": true,
+      "note": "중소벤처기업진흥공단 — 정책자금/지원사업"
+    },
+    "swit.or.kr": {
+      "label": "정부-R&D",
+      "archive": true,
+      "note": "정보통신산업진흥원(NIPA) SW산업정보종합시스템"
+    },
+    "kdata.or.kr": {
+      "label": "정부-R&D",
+      "archive": true,
+      "note": "한국데이터산업진흥원(K-DATA)"
+    },
+    "no-reply@flex.team": {
+      "label": "HR",
+      "archive": true,
+      "note": "flex HR 시스템 — 휴가/근태/급여 알림"
+    },
+    "rememberapp.co.kr": {
+      "label": "광고",
+      "archive": true,
+      "note": "리멤버 포지션 제안 — 광고성 메일"
+    },
+    "cello.bz": {
+      "label": "법무-행정",
+      "archive": true,
+      "note": "첼로 법인등기 서비스"
+    },
+    "alipeople.kr": {
+      "label": "개발-테크",
+      "archive": true,
+      "note": "알리고(ALIGO) SMS/카카오 메시지 API 서비스 공지"
+    },
+    "glance.media": {
+      "label": "광고",
+      "archive": true,
+      "note": "STARTUP WEEKLY 주간 뉴스레터"
+    }
+  }
+}
