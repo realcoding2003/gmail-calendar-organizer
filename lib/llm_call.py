@@ -31,7 +31,8 @@ def main():
         "model": model,
         "prompt": prompt,
         "stream": False,
-        "options": {"temperature": 0.1, "num_ctx": 8192}
+        "keep_alive": -1,
+        "options": {"temperature": 0.1}
     }).encode("utf-8")
 
     req = urllib.request.Request(

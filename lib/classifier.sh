@@ -1,44 +1,98 @@
 #!/bin/bash
-# LLM 분류 시스템 (Ollama: gpt-oss:20b)
-# Phase 1: 사전 분류 — 메일 목록(제목+발신자)을 일괄 판단 → fast/need_body 분류
+# Phase 1: 프로그래밍 방식 패턴 매칭 (메모리 기반, LLM 미사용)
 # Phase 2: 상세 분류 — need_body 메일만 본문 포함하여 개별 AI 분류
-# === Phase 1: 사전 분류 (제목+발신자만, 일괄) ===
+# === Phase 1: 메모리 패턴 매칭 (발신자+제목 키워드) ===
 pre_classify() {
   local mail_list_json="$1"
   local acct="$2"
 
-  local template
-  template=$(cat "$PROMPTS_DIR/pre-classify.txt")
-  template="${template//\{TODAY\}/$(date +%Y-%m-%d)}"
+  echo "$mail_list_json" | python3 -c "
+import json, sys, os, re
 
-  local memory_ctx
-  memory_ctx=$(load_memory_context)
+memory_dir = '$MEMORY_DIR'
 
-  # 메일 목록에서 id/subject/from만 추출하여 경량 데이터 생성
-  local light_list
-  light_list=$(echo "$mail_list_json" | python3 -c "
-import json, sys
+# 발신자 패턴 로드
+try:
+    with open(os.path.join(memory_dir, 'sender-patterns.json')) as f:
+        patterns = json.load(f).get('patterns', {})
+except:
+    patterns = {}
+
+# 분류 규칙 로드
+try:
+    with open(os.path.join(memory_dir, 'classification-rules.json')) as f:
+        rules = json.load(f).get('rules', [])
+except:
+    rules = []
+
+def extract_email_domain(from_header):
+    \"\"\"From 헤더에서 이메일과 도메인 추출\"\"\"
+    m = re.search(r'<([^>]+)>', from_header)
+    email = m.group(1).lower() if m else from_header.strip().lower()
+    domain = email.split('@')[-1] if '@' in email else ''
+    return email, domain
+
 data = json.load(sys.stdin)
-mails = []
+fast = []
+need_body = []
+
 for msg in data.get('messages', []):
-    mails.append({
-        'id': msg['id'],
-        'subject': msg.get('subject', ''),
-        'from': msg.get('from', ''),
-        'date': msg.get('date', '')
-    })
-print(json.dumps(mails, ensure_ascii=False, indent=2))
-" 2>/dev/null)
+    mid = msg['id']
+    subject = msg.get('subject', '')
+    from_addr = msg.get('from', '')
+    email, domain = extract_email_domain(from_addr)
+    subject_lower = subject.lower()
+    matched = False
 
-  local prompt="${template}
+    # 1. 발신자 패턴 매칭 — 엄격 매칭
+    #    패턴 키가 @ 포함 → 이메일 정확 일치
+    #    패턴 키가 도메인 → 도메인 정확 일치 또는 서브도메인 (.key로 끝남)
+    for key, val in patterns.items():
+        if key.startswith('_'):
+            continue
+        key_lower = key.lower()
+        if '@' in key_lower:
+            if email == key_lower:
+                fast.append({
+                    'id': mid, 'label': val['label'], 'confidence': 0.95,
+                    'reason': f'발신자 매칭: {key} → {val[\"label\"]}'
+                })
+                matched = True
+                break
+        else:
+            if domain == key_lower or domain.endswith('.' + key_lower):
+                fast.append({
+                    'id': mid, 'label': val['label'], 'confidence': 0.95,
+                    'reason': f'발신자 도메인 매칭: {key} → {val[\"label\"]}'
+                })
+                matched = True
+                break
 
-${memory_ctx}
+    if matched:
+        continue
 
-계정: $acct
-=== 메일 목록 ===
-$light_list"
+    # 2. 제목 키워드 규칙 매칭 — confidence 0.8 이상만, 3글자 이상 키워드만
+    for rule in rules:
+        conf = rule.get('confidence', 0.9)
+        if conf < 0.8:
+            continue
+        pat = rule.get('pattern', {})
+        kw = (pat.get('subject_contains') or '').lower()
+        label = rule.get('action', {}).get('label', '')
 
-  llm_call "$prompt" 2>/dev/null || echo '{"fast":[],"need_body":[]}'
+        if kw and len(kw) >= 3 and kw in subject_lower:
+            fast.append({
+                'id': mid, 'label': label, 'confidence': conf,
+                'reason': f'키워드 매칭: \"{kw}\" → {label}'
+            })
+            matched = True
+            break
+
+    if not matched:
+        need_body.append({'id': mid, 'reason': '매칭 패턴 없음'})
+
+print(json.dumps({'fast': fast, 'need_body': need_body}, ensure_ascii=False))
+" 2>/dev/null || echo '{"fast":[],"need_body":[]}'
 }
 
 # === Phase 1 결과 처리: fast 항목 라벨 적용 (직접 API, subprocess 없음) ===
@@ -202,8 +256,12 @@ for item in data.get('results', []):
             'method': 'ai'
         }, ensure_ascii=False) + '\n')
 
-    # --- 사용자 확인 필요 → INBOX 유지 + 분류 큐 (1건 = 1파일) ---
+    # --- 사용자 확인 필요 → "확인필요" 라벨 + INBOX 유지 + 분류 큐 ---
     if needs_review or conf < threshold:
+        try:
+            client.modify_labels([mid], add_labels=['확인필요'], remove_labels=[])
+        except:
+            pass
         item_id = f'pending-{mid[:12]}'
         queue_path = os.path.join(queue_dir, 'classifications', f'{item_id}.json')
         with open(queue_path, 'w') as f:
